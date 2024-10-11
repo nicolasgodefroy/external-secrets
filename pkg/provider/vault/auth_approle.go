@@ -17,6 +17,7 @@ package vault
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/vault/api/auth/approle"
@@ -68,10 +69,15 @@ func (c *client) requestTokenWithAppRoleRef(ctx context.Context, appRole *esv1be
 	if err != nil {
 		return err
 	}
-	_, err = c.auth.Login(ctx, appRoleClient)
+	vaultResult, err := c.auth.Login(ctx, appRoleClient)
 	metrics.ObserveAPICall(constants.ProviderHCVault, constants.CallHCVaultLogin, err)
 	if err != nil {
 		return err
 	}
+	token, err := vaultResult.TokenID()
+	if err != nil {
+		return fmt.Errorf(errVaultToken, err)
+	}
+	c.client.SetToken(token)
 	return nil
 }
